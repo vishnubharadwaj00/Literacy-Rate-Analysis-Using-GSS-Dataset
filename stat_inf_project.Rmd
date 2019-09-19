@@ -1,0 +1,363 @@
+---
+title: "Statistical inference with the GSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+For this project, we require ggplot2 and gridExtra package for the plots, dplyr for data manipulation and statsr for the statistical functions used in this course. These three packages contain a wide range of functions to be used, and should encompass all the functions we require to do this project:
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+We can either go to File -> Open File and select our RData file or load the RData file as it is. This automatically imports our gss dataset into the workspace, as gss. The latter method is used here. 
+
+```{r load-data}
+load("gss.Rdata")
+dim(gss)
+```
+
+We have now loaded a dataset with 57061 rows and 114 columns. 
+
+
+* * *
+
+## Part 1: Data
+According to the GSS website, the General Social Survey (GSS) has studied the growing complexity of American society. It is the only full-probability, personal-interview survey designed to monitor changes in both social characteristics and attitudes currently being conducted in the United States. 
+
+The GSS contains a standard core of demographic, behavioral, and attitudinal questions, plus topics of special interest. Among the topics covered are civil liberties, crime and violence, intergroup tolerance, morality, national spending priorities, psychological well-being, social mobility, and stress and traumatic events.
+
+As to how the data is collected, the GSS sample is drawn using an area probability design that randomly selects respondents in households across the United States to take part in the survey. The respondents are from a mix of urban, suburban and rural geographic areas. 
+Therefore, random sampling does take place in this survey, meaning the results of the survey can to an extent, be generalized to the adult population of the United States. 
+
+There are a few things which might not make it completely accurate. Firstly, the GSS is strictly voluntary, meaning even when selected, participants may choose to not attend the survey. Secondly, up until a few years ago, only English speaking participants were chosen, and now Spanish speaking participants have been added. This raises another concern about other languages, as well. 
+
+Random assignment has not been used here to seperate the sampled population into further groups, which means that causality cannot be inferred from the results of this survey, since we cannot be sure that the only difference between different groups is what we are studying. 
+
+* * *
+
+## Part 2: Research question
+
+With such a vast trove of data, it is possible to create many interesting and insightful research questions, each with their own meaningful conclusions. 
+
+Here, I will focus on one particular area: education levels. We will analyzing 3 questions based on this area: 
+
+**Question 1: As of 2012 (latest year of the survey), is there a disparity in the education provided to males and females?**
+
+In other words, for the 2012 subset,is there any difference between the education levels of males and females? Is there any correlation between education level and gender in 2012?
+
+
+**Question 2: In 1972 (first year of the survey), was there a disparity in the education provided to males and females?**
+
+In other words, for the 1972 subset,is there any difference between the education levels of males and females? Is there any correlation between education level and gender in 1972?
+
+**Question 3: Is there a difference in the education levels of 1972 and 2012?** 
+
+Taking gender out of the equation, is there a difference in education levels of the years 1972 and 2012? Has the situation of education improved or declined in those 50 years?
+
+This is becoming an all-important question in today's world, with rising calls for equality between men and women. Education is an essential part of gaining knowledge, and an equal footing in education can open up equal opportunities, for men and women. Educational reforms have also been implemented over the years, to provide a higher level of education for all. But has education actually improved, overall? 
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+*Question 1:*
+
+First let us use only the section of the data that needs to be used, the 2012 data, by filtering it into another dataset. 
+
+```{r}
+gss2012 = gss %>%
+  filter(year=="2012")
+```
+
+2012 is the latest year of the survey, providing us with the latest results to this research question.
+
+Let us see a summary of the education levels in the new subset of data we have:
+
+```{r}
+summary(gss2012$educ)
+```
+
+We can see that the mean is 13.53, the maximum is 20, and the minimum is 0, with a median of 13. 
+There are also 2 NA's, out of 1974 entries, which is around 1% of the dataset, so we can remove those 2 rows to increase accuracy without affecting the accuracy of the results. 
+
+```{r}
+gss2012= gss2012 %>% 
+  filter(educ!="NA")
+
+summary(gss2012$educ)
+```
+
+We can see that the NA values have been successfully removed.
+
+Let us look at the means and medians of education levels, grouped by gender: 
+
+```{r}
+gss2012 %>% 
+  group_by(sex) %>% 
+  summarise(meaned=mean(educ),medec=median(educ))
+```
+
+The mean of female education level is slightly higher than males, and the median is the same for both.
+
+Let us create a simple boxplot to visualise these statistics, helping us get a better understanding:
+```{r}
+ggplot(data=gss2012 ,aes(x=factor(sex),y=educ)) + geom_boxplot()
+```
+
+The boxplot does not seem to show much of a change between the two genders, with the two boxplots looking almost identical.
+
+A barplot to compare the counts of the education levels, with grouping done on gender might help us understand the data better:
+
+```{r}
+ggplot(data=gss2012,aes(x=educ,fill=sex)) +geom_bar(position="dodge")
+```
+
+We can see that as the number of years of education is more than 10, females tend to get more education that men in that education level, except on one or two levels, but the difference is not a lot in most cases. 
+
+Looking at the maximum and minimum, there are slightly more females than males who get 0 years of education, but at the maximum of 20 years, the difference is almost non-existent. 
+
+*Question 2:*
+
+Let us now look at the data from 1972, by subsetting it into a seperate data frame, and doing a similar EDA on it:
+
+```{r}
+gss1972=gss %>%
+  filter(year=="1972")
+summary(gss1972$educ)
+```
+
+We get 5 NA values out of a total of 1613 values, which is around 3% of the dataset. 
+
+```{r}
+gss1972 = gss1972 %>% 
+  filter(gss1972$educ!="NA")
+summary(gss1972$educ)
+```
+
+Already there is a clear difference in the median and mean, without looking at the gender difference. 
+
+```{r}
+gss1972 %>% 
+  group_by(sex) %>% 
+  summarise(meaned=mean(educ),medianed=median(educ))
+```
+
+The mean of education levels of females was lower than the males in 1972, a sharp contrast to the results in 2012. 
+
+Let us see a simple boxplot to visualise these statistics:
+
+```{r}
+ggplot(data=gss1972,aes(x=sex,y=educ)) + geom_boxplot()
+```
+
+It is very evident from this that, although the male median education level and female median education level are almost the same, the average education level for males is definitely higher, and the 75th percentile level is much higher than that of females. 
+
+Creating a plot to see each year of education:
+
+```{r}
+ggplot(data=gss1972,aes(x=educ,fill=sex)) +geom_bar(position="dodge")
+```
+
+In 1972, it is evident that beyond 14 years of education, there are more men than women. These results are much different to the 2012 results. 
+
+Comparing the two datasets using scatterplots:
+
+```{r}
+g1=ggplot(data=gss1972,aes(x=sex,y=educ))+geom_point()+geom_jitter()+ggtitle("1972")
+g2=ggplot(data=gss2012,aes(x=sex,y=educ))+geom_point()+geom_jitter()+ggtitle("2012")
+
+grid.arrange(g1,g2,ncol=2)
+```
+
+The 2 scatter plots on the left are the 1972 data, arranged according to sex, and the 2 scatter plots on the right are the 2012 data, arranged according to sex. It is clear that in 2012, there is a higher concentration at a higher education level, whereas in 1972, that is only for males. 
+
+*Question 3:*
+
+Now, to analyse the difference in education levels overall, between 1972 and 2012.
+
+First let us combine them into a single dataset to make the analysis easier:
+
+```{r}
+gssdata=rbind(gss1972,gss2012)
+```
+
+
+We already have the datasets as well as their summary statistics, so all that is left is to plot them:
+
+Creating a simple boxplot:
+
+```{r}
+ggplot(data=gssdata,aes(x=factor(year),y=educ))+geom_boxplot()
+```
+
+Immediately, it is evident that there is a significant difference in the education levels between the two years. Although the median of 2012 is only slightly higher than 1972, the range and IQR of 2012 is much higher.
+
+Let us create a bar graph between the two years:
+
+```{r}
+ggplot(data=gssdata,aes(x=educ,fill=factor(year)))+geom_bar(position="dodge")
+```
+
+Upto about 12 years of education, 1972 had a higher proportion, but after 12 years, 2012 had the higher proportion. This means that more people are getting more education in 2012, compared to 1972.
+
+
+* * *
+
+## Part 4: Inference
+
+First, let us check the conditions for doing a hypothesis test using the CLT method:
+
+**1.Independence:** 
+ 
+ *Within groups:* 
+ 
+ Random sampling was used.
+ 
+ 1972 observations is well below 10% of the population. 
+                  
+ *Between groups:* 
+ 
+ The two groups are independent of each other, as it is a representative of the population. Also the likelihood of dependence otherwise, is very small with this sample size.
+ 
+ **2.Sample Size/Skew:** 
+ 
+ The sample is slightly skewed, and n is well above 30.
+ 
+ Therefore the conditions for CLT are satisfied and we can use the theoretical method. 
+ 
+The method to be used for all 3 questions is that to be used when comparing 2 independent means, as independence has already been established. The critical score will be the t-score corresponding to the degree of freedom. The degree of freedom is the $df =min(n_1 -1 ,n_2 - 1)$. Here, $n_1$=884 and $n_2$=1088, so the degree of freedom is 883. 
+ _________________
+
+*Question 1:*
+
+The null and alternative hypothesis are as follows:
+
+$H_{0}$ : There is no difference in the education levels of males and females in 2012. 
+         $\mu_{male(2012)}-\mu_{female(2012)}=0$
+         
+$H_{a}$ There is a difference in the education levels of males and females in 2012. 
+         $\mu_{male(2012)}-\mu_{female(2012)} \ne 0$
+         
+Our parameters of interest are $\mu_{male(2012)}$ and $\mu_{female(2012)}$ but since we do not have access to that, we will use our point estimates $\bar{x}_{male(2012)}$ and $\bar{x}_{female(2012)}$.
+
+The significance level $\alpha=0.05$, which is the standard $\alpha$.
+ 
+Using the inference function to calculate the p-value for this hypothesis test:
+
+```{r}
+inference(y=educ,x=sex,data=gss2012,statistic="mean",type="ht",null=0,alternative="twosided",method="theoretical")
+```
+
+Results:
+Response variable: numerical
+Explanatory variable: categorical (2 levels) 
+n_Male = 884, y_bar_Male = 13.5057, s_Male = 3.1721
+n_Female = 1088, y_bar_Female = 13.546, s_Female = 3.0904
+H0: mu_Male =  mu_Female
+HA: mu_Male != mu_Female
+t = -0.2838, df = 883
+p_value = 0.7766
+
+The high p-value of 0.7766 which is much greater than 0.05, means we **fail to reject the null hypothesis $H_0$**. We might still run the risk of a type 2 error, but the big p-value offsets the effects of a larger significance level. What the p-value here indicates is the probability of observing extreme data given that the null hypothesis is true, is high. 
+
+We can also create a confidence interval of the difference in the education levels between males and females. We can use the same function, with some small modifications:
+
+```{r}
+inference(y=educ,x=sex,data=gss2012,statistic="mean",type="ci",method="theoretical",conf_level=0.95)
+```
+
+This 95% Confidence Interval means that we are 95% confident that the difference in the education levels of males and females is between -0.319 and 0.2384. The - sign shows that females getting more education that males. 
+
+This confidence interval method is well in agreement with the hypothesis test method as the 0 is in the confidence interval that has been produced. The differences shown by the Confidence Interval method are also not that significant, which are the same results that can be inferred from the hypothesis test method. 
+
+In conclusion, the results of both the confidence interval method and the hypothesis test method indicate that **there is an insignificant difference in the education levels of males and females in 2012.** 
+
+*Question 2:*
+
+The null and alternative hypothesis are as follows:
+
+$H_{0}$ : There is no difference in the education levels of males and females in 1972. 
+         $\mu_{male(1972)}-\mu_{female(1972)}=0$
+         
+$H_{a}$ There is a difference in the education levels of males and females in 1972. 
+         $\mu_{male(1972)}-\mu_{female(1972)} \ne 0$
+         
+Our parameters of interest are $\mu_{male(1972)}$ and $\mu_{female(1972)}$ but since we do not have access to that, we will use our point estimates $\bar{x}_{male(1972)}$ and $\bar{x}_{female(1972)}$.
+
+The significance level $\alpha=0.05$, which is the standard $\alpha$.
+ 
+Using the inference function to calculate the p-value for this hypothesis test:
+
+```{r}
+inference(y=educ,x=sex,data=gss1972,statistic="mean",type="ht",null=0,alternative="twosided",method="theoretical")
+```
+
+From this inference, we get a p-value of 0.01, which is much lower than our significance level of 0.05, which means we **reject the $H_0$ hypothesis**. Again, we run the risk of a Type-1 error, but even a smaller significance level will not give a different result. 
+
+We can also create a confidence interval of the difference in the education levels between males and females. We can use the same function, with some small modifications:
+
+```{r}
+inference(y=educ,x=sex,data=gss1972,statistic="mean",type="ci",method="theoretical",conf_level=0.95)
+```
+
+The results show that males get about 0.07 to 0.75 years more education then females. Although this does not seem like a lot, since it is above the significance level of 0.05, it is a significant difference, as the difference when extrapolated to the entire population, becomes much bigger. 
+
+The conclusion from this test is that **there was a significant difference in the education levels of males and females in 1972**.
+
+*Question 3:*
+
+The null and alternative hypothesis are as follows:
+
+$H_{0}$ : There is no difference in the education levels of males and females in 2012. 
+         $\mu_{1972}-\mu_{2012}=0$
+         
+$H_{a}$ There is a difference in the education levels of males and females in 2012. 
+         $\mu_{1972}-\mu_{2012} \ne 0$
+         
+Our parameters of interest are $\mu_{1972}$ and $\mu_{2012}$ but since we do not have access to that, we will use our point estimates $\bar{x}_{1972}$ and $\bar{x}_{2012}$.
+
+The significance level $\alpha=0.05$, which is the standard $\alpha$.
+ 
+Using the inference function to calculate the p-value for this hypothesis test:
+
+```{r}
+inference(y=educ,x=factor(year),data=gssdata,statistic="mean",type="ht",null=0,alternative="twosided",method="theoretical")
+```
+
+The p-value obtained is extremely small, <0.0001, which is obviously lesser than the significance level of 0.05, hence we **reject the $H_0$ hypothesis**.  The risk of a type 1 error is even smaller here, as it is such a small p-value.
+
+
+A confidence interval can also be created similar to the above questions:
+
+```{r}
+inference(y=educ,x=factor(year),data=gssdata,statistic="mean",type="ci",method="theoretical",conf_level=0.95)
+```
+
+The confidence interval indicates that there is a 95% chance that on average, people in 2012 had an 1.9825 to 2.4191 more years of education than people in 2012. This is in agreement with the hypothesis test done earlier. 
+
+Therefore, it can be concluded that **there is a significant difference in the education levels of 1972 and 2012**.
+
+
+* * *
+
+## Part 5: Conclusion
+
+It can be concluded that: 
+(1) There is an insignificant difference in the education levels of males and females in the year 2012, with a 95% confidence interval of (-0.319,0.2384).
+
+(2) There is a significant difference in the education levels of males and females in the year 1972, with a 95% confidence interval of (0.0783,0.7542).
+
+(3) There is a very significant difference in the education levels between the years 1972 and 2012, with a 95% confidence interval of (1.9825,2.4191).
